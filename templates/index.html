@@ -12,13 +12,17 @@
       padding: 0;
     }
 
+    html, body {
+      height: 100%;
+    }
+
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(to right, #e0f7fa, #eceff1);
-      min-height: 100vh;
       display: flex;
-      align-items: center;
+      flex-direction: column;
       justify-content: center;
+      align-items: center;
       padding: 30px 20px;
     }
 
@@ -77,6 +81,15 @@
       background: linear-gradient(to right, #357ab8, #5cbce0);
     }
 
+    footer {
+      margin-top: auto;
+      padding: 16px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #555;
+    }
+
     @media (max-width: 480px) {
       .chat-entry {
         padding: 20px;
@@ -108,5 +121,20 @@
       <input type="submit" value="Enter Room 🚀" />
     </form>
   </div>
+
+  <footer>
+    © 2025 Created by Mithanshu
+  </footer>
+
+  <script>
+    document.getElementById('post-form').addEventListener('submit', function (e) {
+      const roomInput = document.getElementById('room_name');
+      const userInput = document.getElementById('username');
+
+      // Trim whitespace from both fields
+      roomInput.value = roomInput.value.trim();
+      userInput.value = userInput.value.trim();
+    });
+  </script>
 </body>
 </html>
