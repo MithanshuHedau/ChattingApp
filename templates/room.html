@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ room }} - DjChat</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js" crossorigin="anonymous"></script>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(to right, #f8fafc, #e2e8f0);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+      min-height: 100vh;
+    }
+
+    h2 {
+      font-size: 2rem;
+      color: #1f2937;
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .chat-box {
+      width: 100%;
+      max-width: 800px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      padding: 20px;
+      margin-bottom: 20px;
+      overflow-y: auto;
+      max-height: 60vh;
+    }
+
+    .message {
+      background: #f1f5f9;
+      padding: 12px 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+
+    .message:hover { background: #e2e8f0; }
+
+    .message b {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 600;
+    }
+
+    .message p {
+      margin: 0;
+      font-size: 0.95rem;
+      color: #374151;
+    }
+
+    .message .time {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .chat-form {
+      position: sticky;
+      bottom: 0;
+      width: 100%;
+      max-width: 800px;
+      background: #ffffff;
+      padding: 16px 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      display: flex;
+      justify-content: center;
+    }
+
+    .input-container {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .chat-input {
+      flex-grow: 1;
+      padding: 14px 18px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 1rem;
+    }
+
+    .send-button {
+      padding: 14px 22px;
+      border: none;
+      border-radius: 8px;
+      background: linear-gradient(to right, #3b82f6, #6366f1);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .chat-box::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .chat-box::-webkit-scrollbar-thumb {
+      background-color: #cbd5e1;
+      border-radius: 4px;
+    }
+
+    @media (max-width: 600px) {
+      .chat-input, .send-button {
+        font-size: 0.95rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <h2>Welcome to "{{ room }}" Chat Room</h2>
+
+  <div id="display" class="chat-box"></div>
+
+  <form id="post-form" class="chat-form">
+    {% csrf_token %}
+    <input type="hidden" id="username" name="username" value="{{ username }}">
+    <input type="hidden" id="room_id" name="room_id" value="{{ room_details.id }}">
+    <div class="input-container">
+      <input type="text" id="message" name="message" placeholder="Type your message..." required class="chat-input">
+      <button type="submit" class="send-button">📨 Send</button>
+    </div>
+  </form>
+
+  <script>
+    const userColors = {};
+    const colorPalette = [
+      "#ef4444", "#f97316", "#eab308", "#10b981", "#3b82f6", "#8b5cf6",
+      "#ec4899", "#14b8a6", "#f59e0b", "#22c55e", "#6366f1", "#db2777"
+    ];
+
+    function stringToColor(username) {
+      if (!userColors[username]) {
+        let hash = 0;
+        for (let i = 0; i < username.length; i++) {
+          hash = username.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const index = Math.abs(hash) % colorPalette.length;
+        userColors[username] = colorPalette[index];
+      }
+      return userColors[username];
+    }
+
+    function fetchMessages() {
+      $.ajax({
+        type: 'GET',
+        url: `/getMessages/{{ room }}/`,
+        success: function (response) {
+          $("#display").empty();
+          response.messages.forEach(msg => {
+            const userColor = stringToColor(msg.user);
+            const messageHtml = `
+              <div class="message">
+                <b style="color: ${userColor};">${msg.user}</b>
+                <p>${msg.value}</p>
+                <div class="time">${msg.date}</div>
+              </div>`;
+            $("#display").append(messageHtml);
+          });
+          $("#display")[0].scrollTop = $("#display")[0].scrollHeight;
+        },
+        error: function () {
+          console.error("Error fetching messages");
+        }
+      });
+    }
+
+    setInterval(fetchMessages, 1000);
+    fetchMessages();
+
+    $(document).on('submit', '#post-form', function (e) {
+      e.preventDefault();
+      const msg = $('#message').val().trim();
+      if (!msg) return;
+
+      $.ajax({
+        type: 'POST',
+        url: '/send',
+        data: {
+          username: $('#username').val(),
+          room_id: $('#room_id').val(),
+          message: msg,
+          csrfmiddlewaretoken: $('input[name=csrfmiddlewaretoken]').val()
+        },
+        success: function (response) {
+          if (response.status === "success") {
+            $('#message').val('');
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
